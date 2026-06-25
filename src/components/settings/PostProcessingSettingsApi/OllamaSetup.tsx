@@ -40,21 +40,32 @@ export const OllamaSetup: React.FC = () => {
         ),
     );
     const unL = listen<string>("ollama-log", (e) => setProgress(e.payload));
+    const unS = listen<OllamaStatus>("ollama-status", (e) =>
+      setStatus(e.payload),
+    );
 
     return () => {
       void unP.then((f) => f());
       void unL.then((f) => f());
+      void unS.then((f) => f());
     };
   }, []);
 
   const setup = async () => {
     setBusy(true);
+    setProgress("");
     try {
-      await commands.ollamaEnsureReady();
+      const result = await commands.ollamaEnsureReady();
+      if (result.status === "error") {
+        setProgress(result.error);
+        return;
+      }
       await refresh();
+      setProgress("");
+    } catch (err) {
+      setProgress(err instanceof Error ? err.message : String(err));
     } finally {
       setBusy(false);
-      setProgress("");
     }
   };
 
