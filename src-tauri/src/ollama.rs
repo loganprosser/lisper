@@ -71,7 +71,9 @@ fn fetch_models() -> Option<Vec<String>> {
     Some(models)
 }
 
-fn status(app: &AppHandle) -> OllamaStatus {
+// ── Private sync helpers ──────────────────────────────────────────────────────
+
+fn status_blocking(app: &AppHandle) -> OllamaStatus {
     let bin = ollama_bin();
     let installed = bin.is_some();
     let version = bin.as_deref().and_then(ollama_version);
@@ -95,15 +97,7 @@ fn status(app: &AppHandle) -> OllamaStatus {
     }
 }
 
-#[tauri::command]
-#[specta::specta]
-pub fn ollama_status(app: AppHandle) -> OllamaStatus {
-    status(&app)
-}
-
-#[tauri::command]
-#[specta::specta]
-pub fn ollama_install(app: AppHandle) -> Result<(), String> {
+fn install_blocking(app: &AppHandle) -> Result<(), String> {
     if ollama_bin().is_some() {
         return Ok(());
     }
@@ -139,11 +133,9 @@ pub fn ollama_install(app: AppHandle) -> Result<(), String> {
     Ok(())
 }
 
-#[tauri::command]
-#[specta::specta]
-pub fn ollama_start(app: AppHandle) -> Result<OllamaStatus, String> {
+fn start_blocking(app: &AppHandle) -> Result<OllamaStatus, String> {
     if fetch_models().is_some() {
-        return Ok(status(&app));
+        return Ok(status_blocking(app));
     } // already running
     let bin = ollama_bin().ok_or("Ollama is not installed")?;
     // Spawn `ollama serve` detached; we don't hold the child (server is long-lived).
@@ -157,7 +149,7 @@ pub fn ollama_start(app: AppHandle) -> Result<OllamaStatus, String> {
     for _ in 0..20 {
         std::thread::sleep(std::time::Duration::from_millis(500));
         if fetch_models().is_some() {
-            let s = status(&app);
+            let s = status_blocking(app);
             let _ = app.emit("ollama-status", s.clone());
             return Ok(s);
         }
@@ -165,9 +157,7 @@ pub fn ollama_start(app: AppHandle) -> Result<OllamaStatus, String> {
     Err("Ollama server did not become ready in time".to_string())
 }
 
-#[tauri::command]
-#[specta::specta]
-pub fn ollama_pull(app: AppHandle, model: String) -> Result<(), String> {
+fn pull_blocking(app: &AppHandle, model: String) -> Result<(), String> {
     use std::io::{BufRead, BufReader};
     let bin = ollama_bin().ok_or("Ollama is not installed")?;
     let mut child = Command::new(bin)
@@ -216,21 +206,67 @@ pub fn ollama_pull(app: AppHandle, model: String) -> Result<(), String> {
     Ok(())
 }
 
-#[tauri::command]
-#[specta::specta]
-pub fn ollama_ensure_ready(app: AppHandle) -> Result<OllamaStatus, String> {
+fn ensure_ready_blocking(app: &AppHandle) -> Result<OllamaStatus, String> {
     if ollama_bin().is_none() {
-        ollama_install(app.clone())?;
+        install_blocking(app)?;
     }
     if fetch_models().is_none() {
-        ollama_start(app.clone())?;
+        start_blocking(app)?;
     }
-    let model = crate::settings::get_settings(&app).ollama_model;
-    let s = status(&app);
+    let model = crate::settings::get_settings(app).ollama_model;
+    let s = status_blocking(app);
     if !s.has_model {
-        ollama_pull(app.clone(), model)?;
+        pull_blocking(app, model)?;
     }
-    Ok(status(&app))
+    Ok(status_blocking(app))
+}
+
+// ── Public async Tauri commands ───────────────────────────────────────────────
+
+#[tauri::command]
+#[specta::specta]
+pub async fn ollama_status(app: AppHandle) -> OllamaStatus {
+    tauri::async_runtime::spawn_blocking(move || status_blocking(&app))
+        .await
+        .unwrap_or_else(|_| OllamaStatus {
+            installed: false,
+            running: false,
+            version: None,
+            models: vec![],
+            has_model: false,
+        })
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn ollama_install(app: AppHandle) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || install_blocking(&app))
+        .await
+        .map_err(|e| format!("task join error: {}", e))?
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn ollama_start(app: AppHandle) -> Result<OllamaStatus, String> {
+    tauri::async_runtime::spawn_blocking(move || start_blocking(&app))
+        .await
+        .map_err(|e| format!("task join error: {}", e))?
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn ollama_pull(app: AppHandle, model: String) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || pull_blocking(&app, model))
+        .await
+        .map_err(|e| format!("task join error: {}", e))?
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn ollama_ensure_ready(app: AppHandle) -> Result<OllamaStatus, String> {
+    tauri::async_runtime::spawn_blocking(move || ensure_ready_blocking(&app))
+        .await
+        .map_err(|e| format!("task join error: {}", e))?
 }
 
 /// Best-effort background auto-start used at app launch.
@@ -247,6 +283,6 @@ pub fn auto_start_if_enabled(app: &AppHandle) {
     }
     let app2 = app.clone();
     std::thread::spawn(move || {
-        let _ = ollama_start(app2);
+        let _ = start_blocking(&app2);
     });
 }

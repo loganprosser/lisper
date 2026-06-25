@@ -4,6 +4,7 @@ import { listen } from "@tauri-apps/api/event";
 import { commands, type OllamaStatus } from "@/bindings";
 import { Button } from "../../ui/Button";
 import { Dropdown } from "../../ui/Dropdown";
+import { Input } from "../../ui/Input";
 import { SettingContainer } from "../../ui/SettingContainer";
 import { useSettings } from "../../../hooks/useSettings";
 
@@ -23,6 +24,7 @@ export const OllamaSetup: React.FC = () => {
   const [status, setStatus] = useState<OllamaStatus | null>(null);
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<string>("");
+  const [pullTag, setPullTag] = useState("");
 
   const refresh = async () => {
     const s = await commands.ollamaStatus();
@@ -50,6 +52,28 @@ export const OllamaSetup: React.FC = () => {
       void unS.then((f) => f());
     };
   }, []);
+
+  const pullModel = async () => {
+    const tag = pullTag.trim();
+    if (!tag) return;
+    setBusy(true);
+    setProgress("");
+    try {
+      const result = await commands.ollamaPull(tag);
+      if (result.status === "error") {
+        setProgress(result.error);
+        return;
+      }
+      await refresh();
+      void updateSetting("ollama_model", tag);
+      setPullTag("");
+      setProgress("");
+    } catch (err) {
+      setProgress(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const setup = async () => {
     setBusy(true);
@@ -133,6 +157,23 @@ export const OllamaSetup: React.FC = () => {
               label: String(n),
             }))}
           />
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Input
+            variant="compact"
+            placeholder="llama3.2:3b"
+            value={pullTag}
+            onChange={(e) => setPullTag(e.target.value)}
+            disabled={busy}
+            className="flex-1"
+          />
+          <Button
+            onClick={() => void pullModel()}
+            disabled={busy || !pullTag.trim()}
+          >
+            {t("settings.postProcessing.api.ollama.pull")}
+          </Button>
         </div>
       </div>
     </SettingContainer>
