@@ -589,6 +589,9 @@ pub fn run(cli_args: CliArgs) {
                 let _ = crate::managers::transcription::get_available_accelerators();
             });
 
+            // Start managed Ollama server in the background if auto-start is enabled.
+            crate::ollama::auto_start_if_enabled(&app_handle);
+
             // Hide tray icon if --no-tray was passed
             if cli_args.no_tray {
                 tray::set_tray_visibility(&app_handle, false);
