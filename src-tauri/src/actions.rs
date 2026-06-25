@@ -621,6 +621,8 @@ impl ShortcutAction for TranscribeAction {
                                 let paste_time = Instant::now();
                                 let final_text = processed.final_text;
                                 let result_text_for_overlay = final_text.clone();
+                                let overlay_enabled = crate::overlay::OVERLAY_ENABLED
+                                    .load(std::sync::atomic::Ordering::Relaxed);
                                 ah.run_on_main_thread(move || {
                                     match utils::paste(final_text, ah_clone.clone()) {
                                         Ok(()) => debug!(
@@ -632,16 +634,20 @@ impl ShortcutAction for TranscribeAction {
                                             let _ = ah_clone.emit("paste-error", ());
                                         }
                                     }
-                                    crate::overlay::resize_overlay(
-                                        &ah_clone,
-                                        crate::overlay::RESULT_WIDTH,
-                                        crate::overlay::RESULT_HEIGHT,
-                                    );
-                                    let _ = ah_clone.emit_to(
-                                        "recording_overlay",
-                                        "transcription-result",
-                                        result_text_for_overlay.clone(),
-                                    );
+                                    if overlay_enabled {
+                                        crate::overlay::resize_overlay(
+                                            &ah_clone,
+                                            crate::overlay::RESULT_WIDTH,
+                                            crate::overlay::RESULT_HEIGHT,
+                                        );
+                                        let _ = ah_clone.emit_to(
+                                            "recording_overlay",
+                                            "transcription-result",
+                                            result_text_for_overlay.clone(),
+                                        );
+                                    } else {
+                                        utils::hide_recording_overlay(&ah_clone);
+                                    }
                                     change_tray_icon(&ah_clone, TrayIconState::Idle);
                                 })
                                 .unwrap_or_else(|e| {

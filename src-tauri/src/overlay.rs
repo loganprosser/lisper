@@ -2,7 +2,7 @@ use crate::input;
 use crate::settings;
 use crate::settings::OverlayPosition;
 use std::sync::atomic::{AtomicBool, Ordering};
-use tauri::{AppHandle, Emitter, Manager, PhysicalPosition, PhysicalSize};
+use tauri::{AppHandle, Emitter, LogicalSize, Manager, PhysicalPosition, PhysicalSize};
 
 #[cfg(not(target_os = "macos"))]
 use log::debug;
@@ -342,6 +342,7 @@ fn show_overlay_state(app_handle: &AppHandle, state: &str) {
 
 /// Shows the recording overlay window with fade-in animation
 pub fn show_recording_overlay(app_handle: &AppHandle) {
+    reset_overlay_size(app_handle);
     show_overlay_state(app_handle, "recording");
 }
 
@@ -375,17 +376,14 @@ pub const RESULT_HEIGHT: f64 = 120.0;
 
 pub fn resize_overlay(app_handle: &AppHandle, width: f64, height: f64) {
     if let Some(win) = app_handle.get_webview_window("recording_overlay") {
-        let _ = win.set_size(PhysicalSize::new(width as u32, height as u32));
+        let _ = win.set_size(LogicalSize::new(width, height));
     }
     update_overlay_position(app_handle);
 }
 
 pub fn reset_overlay_size(app_handle: &AppHandle) {
     if let Some(win) = app_handle.get_webview_window("recording_overlay") {
-        let _ = win.set_size(PhysicalSize::new(
-            OVERLAY_WIDTH as u32,
-            OVERLAY_HEIGHT as u32,
-        ));
+        let _ = win.set_size(LogicalSize::new(OVERLAY_WIDTH, OVERLAY_HEIGHT));
     }
     update_overlay_position(app_handle);
 }
@@ -411,7 +409,7 @@ pub fn hide_recording_overlay(app_handle: &AppHandle) {
 // audio callback (~24 Hz during recording). Defaults to false so the
 // audio path doesn't emit until lib.rs::setup populates the cache from
 // initial settings.
-static OVERLAY_ENABLED: AtomicBool = AtomicBool::new(false);
+pub static OVERLAY_ENABLED: AtomicBool = AtomicBool::new(false);
 
 /// Update the cached overlay-enabled flag. Called from `lib.rs` at
 /// startup after settings load, and from `change_overlay_position_setting`
