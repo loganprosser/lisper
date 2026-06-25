@@ -155,6 +155,12 @@ async fn post_process_transcription(settings: &AppSettings, transcription: &str)
         _ => (None, None),
     };
 
+    let ollama_num_ctx = if provider.id == "ollama" {
+        Some(settings.ollama_num_ctx)
+    } else {
+        None
+    };
+
     if provider.supports_structured_output {
         debug!("Using structured outputs for provider '{}'", provider.id);
 
@@ -227,6 +233,7 @@ async fn post_process_transcription(settings: &AppSettings, transcription: &str)
             Some(json_schema),
             reasoning_effort.clone(),
             reasoning.clone(),
+            ollama_num_ctx,
         )
         .await
         {
@@ -283,6 +290,7 @@ async fn post_process_transcription(settings: &AppSettings, transcription: &str)
         processed_prompt,
         reasoning_effort,
         reasoning,
+        ollama_num_ctx,
     )
     .await
     {
