@@ -234,6 +234,7 @@ impl ModelUnloadTimeout {
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Type)]
 #[serde(rename_all = "snake_case")]
 pub enum SoundTheme {
+    Lisper,
     Marimba,
     Pop,
     Custom,
@@ -242,6 +243,7 @@ pub enum SoundTheme {
 impl SoundTheme {
     fn as_str(&self) -> &'static str {
         match self {
+            SoundTheme::Lisper => "lisper",
             SoundTheme::Marimba => "marimba",
             SoundTheme::Pop => "pop",
             SoundTheme::Custom => "custom",
@@ -500,7 +502,7 @@ fn default_audio_feedback_volume() -> f32 {
 }
 
 fn default_sound_theme() -> SoundTheme {
-    SoundTheme::Marimba
+    SoundTheme::Lisper
 }
 
 fn default_post_process_enabled() -> bool {
@@ -985,5 +987,18 @@ mod tests {
         let out = format!("{:?}", map);
         assert!(!out.contains("secret"));
         assert!(out.contains("[REDACTED]"));
+    }
+}
+
+#[cfg(test)]
+mod sound_theme_tests {
+    use super::SoundTheme;
+    #[test]
+    fn lisper_theme_paths_and_serde() {
+        let t = SoundTheme::Lisper;
+        assert_eq!(t.to_start_path(), "resources/lisper_start.wav");
+        assert_eq!(t.to_stop_path(), "resources/lisper_stop.wav");
+        assert_eq!(serde_json::to_string(&t).unwrap(), "\"lisper\"");
+        assert_eq!(super::default_sound_theme(), SoundTheme::Lisper);
     }
 }

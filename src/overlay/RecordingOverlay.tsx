@@ -10,8 +10,9 @@ import "./RecordingOverlay.css";
 import { commands } from "@/bindings";
 import i18n, { syncLanguageFromSettings } from "@/i18n";
 import { getLanguageDirection } from "@/lib/utils/rtl";
+import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 
-type OverlayState = "recording" | "transcribing" | "processing";
+type OverlayState = "recording" | "transcribing" | "processing" | "result";
 
 const RecordingOverlay: React.FC = () => {
   const { t } = useTranslation();
@@ -20,6 +21,33 @@ const RecordingOverlay: React.FC = () => {
   const [levels, setLevels] = useState<number[]>(Array(16).fill(0));
   const smoothedLevelsRef = useRef<number[]>(Array(16).fill(0));
   const direction = getLanguageDirection(i18n.language);
+  const [resultText, setResultText] = useState("");
+  const [copied, setCopied] = useState(false);
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const dismiss = () => {
+    if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    setIsVisible(false);
+    setState("recording");
+    commands.dismissOverlayResult();
+  };
+
+  const startHideTimer = () => {
+    if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    hideTimerRef.current = setTimeout(dismiss, 5000);
+  };
+
+  const handleCopy = async () => {
+    await writeText(resultText);
+    setCopied(true);
+  };
+
+  useEffect(() => {
+    if (state === "result") startHideTimer();
+    return () => {
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    };
+  }, [state]);
 
   useEffect(() => {
     const setupEventListeners = async () => {
@@ -51,11 +79,23 @@ const RecordingOverlay: React.FC = () => {
         setLevels(smoothed.slice(0, 9));
       });
 
+      // Listen for transcription result
+      const unlistenResult = await listen<string>(
+        "transcription-result",
+        (event) => {
+          setResultText(event.payload);
+          setCopied(false);
+          setState("result");
+          setIsVisible(true);
+        },
+      );
+
       // Cleanup function
       return () => {
         unlistenShow();
         unlistenHide();
         unlistenLevel();
+        unlistenResult();
       };
     };
 
@@ -74,6 +114,13 @@ const RecordingOverlay: React.FC = () => {
     <div
       dir={direction}
       className={`recording-overlay ${isVisible ? "fade-in" : ""}`}
+      onMouseEnter={() => {
+        if (state === "result" && hideTimerRef.current)
+          clearTimeout(hideTimerRef.current);
+      }}
+      onMouseLeave={() => {
+        if (state === "result") startHideTimer();
+      }}
     >
       <div className="overlay-left">{getIcon()}</div>
 
@@ -98,6 +145,14 @@ const RecordingOverlay: React.FC = () => {
         )}
         {state === "processing" && (
           <div className="transcribing-text">{t("overlay.processing")}</div>
+        )}
+        {state === "result" && (
+          <div className="result-panel">
+            <div className="result-text">{resultText}</div>
+            <button className="result-copy" onClick={handleCopy}>
+              {copied ? t("overlay.copied") : t("overlay.copy")}
+            </button>
+          </div>
         )}
       </div>
 
