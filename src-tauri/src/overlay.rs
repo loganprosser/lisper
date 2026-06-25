@@ -370,8 +370,8 @@ pub fn update_overlay_position(app_handle: &AppHandle) {
     }
 }
 
-const RESULT_WIDTH: f64 = 360.0;
-const RESULT_HEIGHT: f64 = 120.0;
+pub const RESULT_WIDTH: f64 = 360.0;
+pub const RESULT_HEIGHT: f64 = 120.0;
 
 pub fn resize_overlay(app_handle: &AppHandle, width: f64, height: f64) {
     if let Some(win) = app_handle.get_webview_window("recording_overlay") {

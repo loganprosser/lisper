@@ -632,7 +632,11 @@ impl ShortcutAction for TranscribeAction {
                                             let _ = ah_clone.emit("paste-error", ());
                                         }
                                     }
-                                    crate::overlay::resize_overlay(&ah_clone, 360.0, 120.0);
+                                    crate::overlay::resize_overlay(
+                                        &ah_clone,
+                                        crate::overlay::RESULT_WIDTH,
+                                        crate::overlay::RESULT_HEIGHT,
+                                    );
                                     let _ = ah_clone.emit_to(
                                         "recording_overlay",
                                         "transcription-result",
