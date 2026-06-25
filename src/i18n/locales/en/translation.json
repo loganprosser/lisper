@@ -394,6 +394,18 @@
           "placeholderWithOptions": "Search or select a model",
           "placeholderNoOptions": "Type a model name",
           "refreshModels": "Refresh models"
+        },
+        "ollama": {
+          "title": "Ollama (local)",
+          "setup": "Set up Ollama",
+          "installed": "Installed",
+          "running": "Server running",
+          "modelReady": "Model ready",
+          "model": "Model",
+          "contextLength": "Context length",
+          "pull": "Download model",
+          "start": "Start server",
+          "working": "Working…"
         }
       },
       "prompts": {

@@ -19,6 +19,7 @@ import { BaseUrlField } from "../PostProcessingSettingsApi/BaseUrlField";
 import { ApiKeyField } from "../PostProcessingSettingsApi/ApiKeyField";
 import { ModelSelect } from "../PostProcessingSettingsApi/ModelSelect";
 import { usePostProcessProviderState } from "../PostProcessingSettingsApi/usePostProcessProviderState";
+import { OllamaSetup } from "../PostProcessingSettingsApi/OllamaSetup";
 import { ShortcutInput } from "../ShortcutInput";
 import { useSettings } from "../../../hooks/useSettings";
 
@@ -50,6 +51,31 @@ const PostProcessingSettingsApiComponent: React.FC = () => {
             {t("settings.postProcessing.api.appleIntelligence.unavailable")}
           </Alert>
         ) : null
+      ) : state.selectedProviderId === "ollama" ? (
+        <>
+          {state.selectedProvider?.allow_base_url_edit && (
+            <SettingContainer
+              title={t("settings.postProcessing.api.baseUrl.title")}
+              description={t("settings.postProcessing.api.baseUrl.description")}
+              descriptionMode="tooltip"
+              layout="horizontal"
+              grouped={true}
+            >
+              <div className="flex items-center gap-2">
+                <BaseUrlField
+                  value={state.baseUrl}
+                  onBlur={state.handleBaseUrlChange}
+                  placeholder={t(
+                    "settings.postProcessing.api.baseUrl.placeholder",
+                  )}
+                  disabled={state.isBaseUrlUpdating}
+                  className="min-w-[380px]"
+                />
+              </div>
+            </SettingContainer>
+          )}
+          <OllamaSetup />
+        </>
       ) : (
         <>
           {state.selectedProvider?.id === "custom" && (
@@ -96,7 +122,7 @@ const PostProcessingSettingsApiComponent: React.FC = () => {
         </>
       )}
 
-      {!state.isAppleProvider && (
+      {!state.isAppleProvider && state.selectedProviderId !== "ollama" && (
         <SettingContainer
           title={t("settings.postProcessing.api.model.title")}
           description={
