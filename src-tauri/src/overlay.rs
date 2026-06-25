@@ -370,6 +370,26 @@ pub fn update_overlay_position(app_handle: &AppHandle) {
     }
 }
 
+const RESULT_WIDTH: f64 = 360.0;
+const RESULT_HEIGHT: f64 = 120.0;
+
+pub fn resize_overlay(app_handle: &AppHandle, width: f64, height: f64) {
+    if let Some(win) = app_handle.get_webview_window("recording_overlay") {
+        let _ = win.set_size(PhysicalSize::new(width as u32, height as u32));
+    }
+    update_overlay_position(app_handle);
+}
+
+pub fn reset_overlay_size(app_handle: &AppHandle) {
+    if let Some(win) = app_handle.get_webview_window("recording_overlay") {
+        let _ = win.set_size(PhysicalSize::new(
+            OVERLAY_WIDTH as u32,
+            OVERLAY_HEIGHT as u32,
+        ));
+    }
+    update_overlay_position(app_handle);
+}
+
 /// Hides the recording overlay window with fade-out animation
 pub fn hide_recording_overlay(app_handle: &AppHandle) {
     // Always hide the overlay regardless of settings - if setting was changed while recording,

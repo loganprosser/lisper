@@ -620,6 +620,7 @@ impl ShortcutAction for TranscribeAction {
                                 let ah_clone = ah.clone();
                                 let paste_time = Instant::now();
                                 let final_text = processed.final_text;
+                                let result_text_for_overlay = final_text.clone();
                                 ah.run_on_main_thread(move || {
                                     match utils::paste(final_text, ah_clone.clone()) {
                                         Ok(()) => debug!(
@@ -631,7 +632,12 @@ impl ShortcutAction for TranscribeAction {
                                             let _ = ah_clone.emit("paste-error", ());
                                         }
                                     }
-                                    utils::hide_recording_overlay(&ah_clone);
+                                    crate::overlay::resize_overlay(&ah_clone, 360.0, 120.0);
+                                    let _ = ah_clone.emit_to(
+                                        "recording_overlay",
+                                        "transcription-result",
+                                        result_text_for_overlay.clone(),
+                                    );
                                     change_tray_icon(&ah_clone, TrayIconState::Idle);
                                 })
                                 .unwrap_or_else(|e| {
