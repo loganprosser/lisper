@@ -26,6 +26,7 @@
 ## File Structure
 
 **Created:**
+
 - `NOTICE` — upstream attribution.
 - `src/components/icons/LisperBot.tsx` — robot logo React component (replaces `HandyHand`).
 - `src/components/icons/LisperTextLogo.tsx` — "lisper" wordmark (replaces `HandyTextLogo`).
@@ -35,6 +36,7 @@
 - `scripts/gen-sounds.ts` — generates placeholder WAVs.
 
 **Modified:**
+
 - `src-tauri/tauri.conf.json` — productName, identifier, updater, signing.
 - `package.json` — name.
 - `src-tauri/Cargo.toml` — bin/lib names.
@@ -59,28 +61,34 @@
 ## Task 1: Identity & ownership config
 
 **Files:**
+
 - Modify: `src-tauri/tauri.conf.json`
 - Modify: `package.json:2`
 - Modify: `src-tauri/Cargo.toml`
 - Create: `NOTICE`
 
 **Interfaces:**
+
 - Produces: bundle identifier `com.lisper.app`, product name `lisper`, cargo lib name `lisper_app_lib`, bin name `lisper`.
 
 - [ ] **Step 1: Edit `tauri.conf.json`**
 
 Set:
+
 ```json
 "productName": "lisper",
 "identifier": "com.lisper.app",
 ```
+
 In `bundle.windows`, remove the `signCommand` line (leave the `nsis` block). In `plugins.updater`, disable updates for now by replacing the block with:
+
 ```json
 "updater": {
   "active": false,
   "endpoints": ["https://example.invalid/latest.json"]
 }
 ```
+
 (Keep `createUpdaterArtifacts` as-is; `active: false` stops update checks. Removing `pubkey` is fine since updater is inactive.)
 
 - [ ] **Step 2: Edit `package.json`**
@@ -124,11 +132,13 @@ git commit -m "chore: rebrand identity to lisper (bundle id, names, NOTICE)"
 ## Task 2: Robot logo source SVG + raster icon generation
 
 **Files:**
+
 - Create: `assets/branding/lisper-bot.svg`
 - Create: `scripts/gen-icons.sh`
 - Modify (regenerate): all files under `src-tauri/icons/` and the tray PNGs in `src-tauri/resources/` (`tray_idle.png`, `tray_idle_dark.png`, `tray_recording.png`, `tray_recording_dark.png`, `tray_transcribing.png`, `tray_transcribing_dark.png`, `handy.png`, `recording.png`, `transcribing.png`)
 
 **Interfaces:**
+
 - Produces: `assets/branding/lisper-bot.svg` (square viewBox, violet fill `#7C3AED`), and regenerated rasters in every icon slot referenced by `tauri.conf.json` `bundle.icon`.
 
 - [ ] **Step 1: Create the source SVG**
@@ -240,6 +250,7 @@ git commit -m "feat: add lisper robot logo and regenerate all app/tray icons"
 ## Task 3: Logo React components + replace usages
 
 **Files:**
+
 - Create: `src/components/icons/LisperBot.tsx`
 - Create: `src/components/icons/LisperTextLogo.tsx`
 - Modify: `src/components/icons/index.ts`
@@ -247,6 +258,7 @@ git commit -m "feat: add lisper robot logo and regenerate all app/tray icons"
 - Modify: all importers (find in Step 4)
 
 **Interfaces:**
+
 - Consumes: nothing.
 - Produces: `LisperBot` (props `{ width?, height? }`, default 126×135-ish, classes `fill-text stroke-text`) and `LisperTextLogo` (props `{ width?, height?, className? }`).
 
@@ -267,9 +279,23 @@ const LisperBot = ({
     className="fill-text stroke-text"
     xmlns="http://www.w3.org/2000/svg"
   >
-    <line x1="256" y1="96" x2="256" y2="150" strokeWidth="14" strokeLinecap="round" />
+    <line
+      x1="256"
+      y1="96"
+      x2="256"
+      y2="150"
+      strokeWidth="14"
+      strokeLinecap="round"
+    />
     <circle cx="256" cy="90" r="18" />
-    <rect x="136" y="150" width="240" height="200" rx="44" className="fill-logo-primary" />
+    <rect
+      x="136"
+      y="150"
+      width="240"
+      height="200"
+      rx="44"
+      className="fill-logo-primary"
+    />
     <circle cx="206" cy="240" r="26" />
     <circle cx="306" cy="240" r="26" />
     <rect x="196" y="296" width="120" height="18" rx="9" />
@@ -322,6 +348,7 @@ export default LisperTextLogo;
 - [ ] **Step 3: Update `src/components/icons/index.ts`**
 
 Add exports (keep existing three):
+
 ```ts
 export { default as LisperBot } from "./LisperBot";
 export { default as LisperTextLogo } from "./LisperTextLogo";
@@ -331,6 +358,7 @@ export { default as LisperTextLogo } from "./LisperTextLogo";
 
 Run: `grep -rn "HandyHand\|HandyTextLogo" src`
 For each hit, replace the import and JSX usage: `HandyHand` → `LisperBot`, `HandyTextLogo` → `LisperTextLogo`. Then delete the old files:
+
 ```bash
 git rm src/components/icons/HandyHand.tsx src/components/icons/HandyTextLogo.tsx
 ```
@@ -352,25 +380,30 @@ git commit -m "feat: replace hand logo components with lisper robot + wordmark"
 ## Task 4: Violet color scheme
 
 **Files:**
+
 - Modify: `src/App.css:1-110` (the `:root` light block and `prefers-color-scheme: dark` block)
 - Modify: `src/overlay/RecordingOverlay.css` (audit for hardcoded hex)
 
 **Interfaces:**
+
 - Produces: violet values for `--color-background-ui`, `--color-logo-primary`, `--color-logo-stroke`, dark-mode equivalents.
 
 - [ ] **Step 1: Edit light-mode `:root` in `src/App.css`**
 
 Replace the pink values:
+
 ```css
---color-background-ui: #7C3AED;
+--color-background-ui: #7c3aed;
 --color-logo-primary: #a78bfa;
 --color-logo-stroke: #4c1d95;
 ```
+
 (Leave `--color-text`, `--color-background`, `--color-text-stroke`, grays as-is unless they read pink.)
 
 - [ ] **Step 2: Edit dark-mode block (`@media (prefers-color-scheme: dark)`)**
 
 Replace:
+
 ```css
 --color-logo-primary: #c4b5fd;
 --color-logo-stroke: #ede9fe;
@@ -398,11 +431,13 @@ git commit -m "feat: recolor UI to violet (#7C3AED) theme"
 ## Task 5: Brand strings (i18n + Rust titles)
 
 **Files:**
+
 - Modify: `src/i18n/locales/en/translation.json`
 - Modify: other `src/i18n/locales/*/translation.json` brand occurrences
 - Modify: `src-tauri/src/tray.rs`, `src-tauri/src/lib.rs`, `src-tauri/src/overlay.rs` (any window/tray title literal "Handy")
 
 **Interfaces:**
+
 - Produces: no "Handy" brand name in user-facing UI (adjective/URL/doc references excepted).
 
 - [ ] **Step 1: Find brand-name string occurrences in en locale**
@@ -439,10 +474,12 @@ git commit -m "feat: replace Handy brand strings with lisper in UI and titles"
 ## Task 6: Generate placeholder Lisper WAVs
 
 **Files:**
+
 - Create: `scripts/gen-sounds.ts`
 - Create: `src-tauri/resources/lisper_start.wav`, `src-tauri/resources/lisper_stop.wav`
 
 **Interfaces:**
+
 - Produces: two 16-bit PCM mono WAV files at 44.1kHz.
 
 - [ ] **Step 1: Write `scripts/gen-sounds.ts`**
@@ -457,11 +494,19 @@ const SR = 44100;
 function wav(samples: Float32Array): Buffer {
   const n = samples.length;
   const buf = Buffer.alloc(44 + n * 2);
-  buf.write("RIFF", 0); buf.writeUInt32LE(36 + n * 2, 4); buf.write("WAVE", 8);
-  buf.write("fmt ", 12); buf.writeUInt32LE(16, 16); buf.writeUInt16LE(1, 20);
-  buf.writeUInt16LE(1, 22); buf.writeUInt32LE(SR, 24); buf.writeUInt32LE(SR * 2, 28);
-  buf.writeUInt16LE(2, 32); buf.writeUInt16LE(16, 34);
-  buf.write("data", 36); buf.writeUInt32LE(n * 2, 40);
+  buf.write("RIFF", 0);
+  buf.writeUInt32LE(36 + n * 2, 4);
+  buf.write("WAVE", 8);
+  buf.write("fmt ", 12);
+  buf.writeUInt32LE(16, 16);
+  buf.writeUInt16LE(1, 20);
+  buf.writeUInt16LE(1, 22);
+  buf.writeUInt32LE(SR, 24);
+  buf.writeUInt32LE(SR * 2, 28);
+  buf.writeUInt16LE(2, 32);
+  buf.writeUInt16LE(16, 34);
+  buf.write("data", 36);
+  buf.writeUInt32LE(n * 2, 40);
   for (let i = 0; i < n; i++) {
     const s = Math.max(-1, Math.min(1, samples[i]));
     buf.writeInt16LE((s * 32767) | 0, 44 + i * 2);
@@ -477,13 +522,17 @@ function deepClick(durSec: number, freq: number): Float32Array {
     const t = i / SR;
     const env = Math.exp(-t * 32);
     const body = Math.sin(2 * Math.PI * freq * t) * env;
-    const transient = (Math.sin(i * 12.9898) * 43758.5453 % 1) * Math.exp(-t * 220) * 0.4;
+    const transient =
+      ((Math.sin(i * 12.9898) * 43758.5453) % 1) * Math.exp(-t * 220) * 0.4;
     out[i] = (body * 0.8 + transient) * 0.9;
   }
   return out;
 }
 
-writeFileSync("src-tauri/resources/lisper_start.wav", wav(deepClick(0.18, 120)));
+writeFileSync(
+  "src-tauri/resources/lisper_start.wav",
+  wav(deepClick(0.18, 120)),
+);
 writeFileSync("src-tauri/resources/lisper_stop.wav", wav(deepClick(0.12, 90)));
 console.log("sounds generated");
 ```
@@ -510,11 +559,13 @@ git commit -m "feat: add generated lisper deep-click start/stop sounds"
 ## Task 7: SoundTheme::Lisper enum + default + picker option
 
 **Files:**
+
 - Modify: `src-tauri/src/settings.rs` (enum at ~236, `as_str` at ~242, `default_sound_theme` at ~502)
 - Modify: `src/components/settings/SoundPicker.tsx`
 - Modify: `src/i18n/locales/en/translation.json` (label if SoundPicker uses a key)
 
 **Interfaces:**
+
 - Consumes: existing `SoundTheme` enum, `to_start_path`/`to_stop_path` (unchanged — they call `as_str()`).
 - Produces: `SoundTheme::Lisper` (serde `"lisper"`), default theme = `Lisper`, frontend option `{ value: "lisper", label: "Lisper" }`.
 
@@ -545,6 +596,7 @@ Expected: FAIL — `SoundTheme` has no variant `Lisper`.
 - [ ] **Step 3: Implement the enum + mapping + default**
 
 In `settings.rs`:
+
 ```rust
 pub enum SoundTheme {
     Lisper,
@@ -553,11 +605,15 @@ pub enum SoundTheme {
     Custom,
 }
 ```
+
 In `as_str`, add the arm:
+
 ```rust
 SoundTheme::Lisper => "lisper",
 ```
+
 Change `default_sound_theme`:
+
 ```rust
 fn default_sound_theme() -> SoundTheme {
     SoundTheme::Lisper
@@ -572,6 +628,7 @@ Expected: PASS.
 - [ ] **Step 5: Add the frontend option**
 
 In `src/components/settings/SoundPicker.tsx`, change the default and options:
+
 ```tsx
 const selectedTheme = getSetting("sound_theme") ?? "lisper";
 
@@ -581,9 +638,11 @@ const options: DropdownOption[] = [
   { value: "pop", label: "Pop" },
 ];
 ```
+
 And widen the cast in `onSelect`:
+
 ```tsx
-updateSetting("sound_theme", value as "lisper" | "marimba" | "pop" | "custom")
+updateSetting("sound_theme", value as "lisper" | "marimba" | "pop" | "custom");
 ```
 
 - [ ] **Step 6: Regenerate bindings / typecheck**
@@ -609,11 +668,13 @@ git commit -m "feat: add Lisper sound theme as default deep-click feedback"
 ## Task 8: Backend — emit result event, resize/reset overlay, dismiss command
 
 **Files:**
+
 - Modify: `src-tauri/src/overlay.rs` (add `resize_overlay`, `reset_overlay_size`; reuse `OVERLAY_WIDTH`/`OVERLAY_HEIGHT`)
 - Modify: `src-tauri/src/actions.rs` (non-empty `final_text` branch, ~lines 615-640)
 - Modify: `src-tauri/src/commands/` overlay command module + `src-tauri/src/lib.rs` (register command)
 
 **Interfaces:**
+
 - Produces:
   - Event `transcription-result` → overlay window, payload `String` (final text).
   - `pub fn resize_overlay(app: &AppHandle, width: f64, height: f64)` and `pub fn reset_overlay_size(app: &AppHandle)` in `overlay.rs`.
@@ -623,6 +684,7 @@ git commit -m "feat: add Lisper sound theme as default deep-click feedback"
 - [ ] **Step 1: Add resize/reset fns in `overlay.rs`**
 
 After `hide_recording_overlay`, add:
+
 ```rust
 const RESULT_WIDTH: f64 = 360.0;
 const RESULT_HEIGHT: f64 = 120.0;
@@ -644,6 +706,7 @@ pub fn reset_overlay_size(app_handle: &AppHandle) {
     update_overlay_position(app_handle);
 }
 ```
+
 (If the existing `update_overlay_position` assumes the bar height when centering, that is acceptable — the result panel still anchors to the same edge.)
 
 - [ ] **Step 2: Add the dismiss command**
@@ -652,6 +715,7 @@ Find the overlay command module:
 
 Run: `grep -rln "recording_overlay\|hide_recording_overlay\|tauri::command" src-tauri/src/commands`
 In the overlay-related command file (create `src-tauri/src/commands/overlay.rs` and `mod overlay;` if none exists), add:
+
 ```rust
 #[tauri::command]
 #[specta::specta]
@@ -664,6 +728,7 @@ pub fn dismiss_overlay_result(app: tauri::AppHandle) {
 - [ ] **Step 3: Register the command in `lib.rs`**
 
 In the `tauri_specta`/`invoke_handler` command list in `src-tauri/src/lib.rs` (same list that holds `commands::audio::play_test_sound`), add:
+
 ```rust
 commands::overlay::dismiss_overlay_result,
 ```
@@ -671,11 +736,14 @@ commands::overlay::dismiss_overlay_result,
 - [ ] **Step 4: Emit result + resize instead of immediate hide**
 
 In `actions.rs`, in the `else` branch where `final_text` is non-empty (currently: paste, then `utils::hide_recording_overlay(&ah_clone)`), keep the paste but replace the unconditional hide with a result emission. After the paste call inside the `run_on_main_thread` closure, change:
+
 ```rust
                                     utils::hide_recording_overlay(&ah_clone);
                                     change_tray_icon(&ah_clone, TrayIconState::Idle);
 ```
+
 to:
+
 ```rust
                                     crate::overlay::resize_overlay(&ah_clone, 360.0, 120.0);
                                     let _ = ah_clone.emit_to(
@@ -685,10 +753,13 @@ to:
                                     );
                                     change_tray_icon(&ah_clone, TrayIconState::Idle);
 ```
+
 Before the `run_on_main_thread` call, clone the text for the overlay (since `final_text` is moved into `paste`):
+
 ```rust
                                 let result_text_for_overlay = final_text.clone();
 ```
+
 The fallback error arm of `run_on_main_thread` should still call `utils::hide_recording_overlay(&ah)` (unchanged). The overlay is now dismissed by the frontend via `dismiss_overlay_result`.
 
 - [ ] **Step 5: Verify compile**
@@ -708,17 +779,20 @@ git commit -m "feat: emit transcription result to overlay and add resize/dismiss
 ## Task 9: Frontend — result panel, copy, auto-hide-with-hover
 
 **Files:**
+
 - Modify: `src/overlay/RecordingOverlay.tsx`
 - Modify: `src/overlay/RecordingOverlay.css`
 - Modify: `src/i18n/locales/en/translation.json` (keys `overlay.copy`, `overlay.copied`)
 
 **Interfaces:**
+
 - Consumes: event `transcription-result` (string payload), command `commands.dismissOverlayResult()` (from regenerated `bindings.ts`), clipboard plugin `@tauri-apps/plugin-clipboard-manager`.
 - Produces: overlay `"result"` state UI.
 
 - [ ] **Step 1: Add i18n keys**
 
 In `src/i18n/locales/en/translation.json`, under the existing `overlay` object add:
+
 ```json
 "copy": "Copy",
 "copied": "Copied"
@@ -727,16 +801,21 @@ In `src/i18n/locales/en/translation.json`, under the existing `overlay` object a
 - [ ] **Step 2: Extend overlay state + listeners in `RecordingOverlay.tsx`**
 
 Change the state type and add result handling:
+
 ```tsx
 type OverlayState = "recording" | "transcribing" | "processing" | "result";
 ```
+
 Add state:
+
 ```tsx
 const [resultText, setResultText] = useState("");
 const [copied, setCopied] = useState(false);
 const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 ```
+
 Inside `setupEventListeners`, add a listener (and include it in the cleanup):
+
 ```tsx
 const unlistenResult = await listen<string>("transcription-result", (event) => {
   setResultText(event.payload);
@@ -745,6 +824,7 @@ const unlistenResult = await listen<string>("transcription-result", (event) => {
   setIsVisible(true);
 });
 ```
+
 Add `unlistenResult();` to the returned cleanup.
 
 - [ ] **Step 3: Add auto-hide-with-hover timer + dismiss**
@@ -781,6 +861,7 @@ const handleCopy = async () => {
 - [ ] **Step 4: Render the result panel**
 
 In the JSX, add a branch (e.g. in `overlay-middle`, plus pause-on-hover handlers on the root):
+
 ```tsx
 <div
   ...
@@ -792,21 +873,26 @@ In the JSX, add a branch (e.g. in `overlay-middle`, plus pause-on-hover handlers
   }}
 >
 ```
+
 And inside the middle region:
+
 ```tsx
-{state === "result" && (
-  <div className="result-panel">
-    <div className="result-text">{resultText}</div>
-    <button className="result-copy" onClick={handleCopy}>
-      {copied ? t("overlay.copied") : t("overlay.copy")}
-    </button>
-  </div>
-)}
+{
+  state === "result" && (
+    <div className="result-panel">
+      <div className="result-text">{resultText}</div>
+      <button className="result-copy" onClick={handleCopy}>
+        {copied ? t("overlay.copied") : t("overlay.copy")}
+      </button>
+    </div>
+  );
+}
 ```
 
 - [ ] **Step 5: Style the panel in `RecordingOverlay.css`**
 
 Add (violet accent, scrollable text, copy button):
+
 ```css
 .result-panel {
   display: flex;
