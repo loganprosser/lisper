@@ -10,6 +10,7 @@ mod helpers;
 mod input;
 mod llm_client;
 mod managers;
+mod ollama;
 mod overlay;
 pub mod portable;
 mod settings;
@@ -424,6 +425,11 @@ pub fn run(cli_args: CliArgs) {
             commands::audio::get_clamshell_microphone,
             commands::audio::is_recording,
             commands::overlay::dismiss_overlay_result,
+            ollama::ollama_status,
+            ollama::ollama_install,
+            ollama::ollama_start,
+            ollama::ollama_pull,
+            ollama::ollama_ensure_ready,
             commands::transcription::set_model_unload_timeout,
             commands::transcription::get_model_load_status,
             commands::transcription::unload_model_manually,
