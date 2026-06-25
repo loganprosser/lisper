@@ -149,7 +149,12 @@ fn build_apple_intelligence_bridge() {
         Path::new(&sdk_path).join("System/Library/Frameworks/FoundationModels.framework");
     let has_foundation_models = framework_path.exists();
 
-    let source_file = if has_foundation_models {
+    let force_stub = std::env::var("LISPER_AI_STUB").map(|v| v == "1").unwrap_or(false);
+    println!("cargo:rerun-if-env-changed=LISPER_AI_STUB");
+    let source_file = if force_stub {
+        println!("cargo:warning=LISPER_AI_STUB=1 set. Building Apple Intelligence stub.");
+        STUB_SWIFT_FILE
+    } else if has_foundation_models {
         println!("cargo:warning=Building with Apple Intelligence support.");
         REAL_SWIFT_FILE
     } else {
