@@ -403,6 +403,12 @@ pub struct AppSettings {
     pub post_process_prompts: Vec<LLMPrompt>,
     #[serde(default)]
     pub post_process_selected_prompt_id: Option<String>,
+    #[serde(default = "default_ollama_model")]
+    pub ollama_model: String,
+    #[serde(default = "default_ollama_num_ctx")]
+    pub ollama_num_ctx: u32,
+    #[serde(default = "default_ollama_auto_start")]
+    pub ollama_auto_start: bool,
     #[serde(default)]
     pub mute_while_recording: bool,
     #[serde(default)]
@@ -520,11 +526,31 @@ fn default_show_tray_icon() -> bool {
 }
 
 fn default_post_process_provider_id() -> String {
-    "openai".to_string()
+    "ollama".to_string()
+}
+
+fn default_ollama_model() -> String {
+    "llama3.2:3b".to_string()
+}
+
+fn default_ollama_num_ctx() -> u32 {
+    4096
+}
+
+fn default_ollama_auto_start() -> bool {
+    true
 }
 
 fn default_post_process_providers() -> Vec<PostProcessProvider> {
     let mut providers = vec![
+        PostProcessProvider {
+            id: "ollama".to_string(),
+            label: "Ollama (local)".to_string(),
+            base_url: "http://localhost:11434/v1".to_string(),
+            allow_base_url_edit: true,
+            models_endpoint: Some("/models".to_string()),
+            supports_structured_output: false,
+        },
         PostProcessProvider {
             id: "openai".to_string(),
             label: "OpenAI".to_string(),
@@ -801,6 +827,9 @@ pub fn get_default_settings() -> AppSettings {
         post_process_models: default_post_process_models(),
         post_process_prompts: default_post_process_prompts(),
         post_process_selected_prompt_id: None,
+        ollama_model: default_ollama_model(),
+        ollama_num_ctx: default_ollama_num_ctx(),
+        ollama_auto_start: default_ollama_auto_start(),
         mute_while_recording: false,
         append_trailing_space: false,
         app_language: default_app_language(),
@@ -1000,5 +1029,25 @@ mod sound_theme_tests {
         assert_eq!(t.to_stop_path(), "resources/lisper_stop.wav");
         assert_eq!(serde_json::to_string(&t).unwrap(), "\"lisper\"");
         assert_eq!(super::default_sound_theme(), SoundTheme::Lisper);
+    }
+}
+
+#[cfg(test)]
+mod ollama_settings_tests {
+    use super::*;
+    #[test]
+    fn ollama_defaults_present() {
+        assert_eq!(default_post_process_provider_id(), "ollama");
+        assert_eq!(default_ollama_model(), "llama3.2:3b");
+        assert_eq!(default_ollama_num_ctx(), 4096);
+        assert!(default_ollama_auto_start());
+        let providers = default_post_process_providers();
+        let o = providers
+            .iter()
+            .find(|p| p.id == "ollama")
+            .expect("ollama provider present");
+        assert_eq!(o.base_url, "http://localhost:11434/v1");
+        assert!(o.allow_base_url_edit);
+        assert_eq!(o.models_endpoint.as_deref(), Some("/models"));
     }
 }
