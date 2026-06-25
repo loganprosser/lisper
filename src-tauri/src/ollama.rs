@@ -79,13 +79,13 @@ fn status(app: &AppHandle) -> OllamaStatus {
     let running = models.is_some();
     let models = models.unwrap_or_default();
     let configured = crate::settings::get_settings(app).ollama_model;
-    let has_model = models.iter().any(|m| {
-        m == &configured
-            || m.starts_with(&format!(
-                "{}:",
-                configured.split(':').next().unwrap_or(&configured)
-            ))
-    });
+    let has_model = if configured.contains(':') {
+        models.iter().any(|m| m == &configured)
+    } else {
+        models
+            .iter()
+            .any(|m| m == &configured || m.starts_with(&format!("{}:", configured)))
+    };
     OllamaStatus {
         installed,
         running,
@@ -172,11 +172,12 @@ pub fn ollama_pull(app: AppHandle, model: String) -> Result<(), String> {
     let bin = ollama_bin().ok_or("Ollama is not installed")?;
     let mut child = Command::new(bin)
         .args(["pull", &model])
-        .stdout(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::piped())
         .spawn()
         .map_err(|e| format!("Failed to start ollama pull: {}", e))?;
     // Ollama writes progress to stderr.
+    let mut tail: Vec<String> = Vec::new();
     if let Some(err) = child.stderr.take() {
         let reader = BufReader::new(err);
         for line in reader.lines().map_while(Result::ok) {
@@ -190,13 +191,21 @@ pub fn ollama_pull(app: AppHandle, model: String) -> Result<(), String> {
                     "model": model, "status": line, "percent": percent
                 }),
             );
+            tail.push(line);
+            if tail.len() > 5 {
+                tail.remove(0);
+            }
         }
     }
     let st = child
         .wait()
         .map_err(|e| format!("pull wait failed: {}", e))?;
     if !st.success() {
-        return Err(format!("ollama pull {} failed", model));
+        return Err(format!(
+            "ollama pull {} failed: {}",
+            model,
+            tail.join(" | ")
+        ));
     }
     let _ = app.emit(
         "ollama-pull-progress",
