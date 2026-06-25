@@ -10,6 +10,7 @@ mod helpers;
 mod input;
 mod llm_client;
 mod managers;
+mod ollama;
 mod overlay;
 pub mod portable;
 mod settings;
@@ -424,6 +425,11 @@ pub fn run(cli_args: CliArgs) {
             commands::audio::get_clamshell_microphone,
             commands::audio::is_recording,
             commands::overlay::dismiss_overlay_result,
+            ollama::ollama_status,
+            ollama::ollama_install,
+            ollama::ollama_start,
+            ollama::ollama_pull,
+            ollama::ollama_ensure_ready,
             commands::transcription::set_model_unload_timeout,
             commands::transcription::get_model_load_status,
             commands::transcription::unload_model_manually,
@@ -582,6 +588,9 @@ pub fn run(cli_args: CliArgs) {
             std::thread::spawn(|| {
                 let _ = crate::managers::transcription::get_available_accelerators();
             });
+
+            // Start managed Ollama server in the background if auto-start is enabled.
+            crate::ollama::auto_start_if_enabled(&app_handle);
 
             // Hide tray icon if --no-tray was passed
             if cli_args.no_tray {

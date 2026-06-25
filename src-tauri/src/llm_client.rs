@@ -33,6 +33,11 @@ pub struct ReasoningConfig {
 }
 
 #[derive(Debug, Serialize)]
+struct OllamaOptions {
+    num_ctx: u32,
+}
+
+#[derive(Debug, Serialize)]
 struct ChatCompletionRequest {
     model: String,
     messages: Vec<ChatMessage>,
@@ -42,6 +47,8 @@ struct ChatCompletionRequest {
     reasoning_effort: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     reasoning: Option<ReasoningConfig>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    options: Option<OllamaOptions>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -115,6 +122,7 @@ pub async fn send_chat_completion(
     prompt: String,
     reasoning_effort: Option<String>,
     reasoning: Option<ReasoningConfig>,
+    num_ctx: Option<u32>,
 ) -> Result<Option<String>, String> {
     send_chat_completion_with_schema(
         provider,
@@ -125,6 +133,7 @@ pub async fn send_chat_completion(
         None,
         reasoning_effort,
         reasoning,
+        num_ctx,
     )
     .await
 }
@@ -143,6 +152,7 @@ pub async fn send_chat_completion_with_schema(
     json_schema: Option<Value>,
     reasoning_effort: Option<String>,
     reasoning: Option<ReasoningConfig>,
+    num_ctx: Option<u32>,
 ) -> Result<Option<String>, String> {
     let base_url = provider.base_url.trim_end_matches('/');
     let url = format!("{}/chat/completions", base_url);
@@ -184,6 +194,7 @@ pub async fn send_chat_completion_with_schema(
         response_format,
         reasoning_effort,
         reasoning,
+        options: num_ctx.map(|n| OllamaOptions { num_ctx: n }),
     };
 
     let response = client
