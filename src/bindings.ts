@@ -439,6 +439,9 @@ async showMainWindowCommand() : Promise<Result<null, string>> {
 async cancelOperation() : Promise<void> {
     await TAURI_INVOKE("cancel_operation");
 },
+async dismissOverlayResult() : Promise<void> {
+    await TAURI_INVOKE("dismiss_overlay_result");
+},
 async isPortable() : Promise<boolean> {
     return await TAURI_INVOKE("is_portable");
 },

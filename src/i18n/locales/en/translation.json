@@ -620,6 +620,8 @@
   },
   "overlay": {
     "transcribing": "Transcribing...",
-    "processing": "Processing..."
+    "processing": "Processing...",
+    "copy": "Copy",
+    "copied": "Copied"
   }
 }
